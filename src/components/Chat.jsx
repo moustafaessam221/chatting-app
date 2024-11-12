@@ -7,12 +7,23 @@ import {
   query,
   where,
   orderBy,
+  deleteDoc,
+  doc,
 } from "firebase/firestore";
 import { auth, db } from "../firebaseConfig";
 import "../styles/Chat.css";
 import { format } from "date-fns";
 
 export const Chat = ({ room }) => {
+  // delete message function
+  const deleteMessage = async (messageId) => {
+    try {
+      await deleteDoc(doc(db, "messages", messageId));
+    } catch (error) {
+      console.error("Error deleting message:", error);
+    }
+  };
+
   const [newMessage, setNewMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -53,6 +64,7 @@ export const Chat = ({ room }) => {
           createdAt: serverTimestamp(),
           user: auth.currentUser.displayName || "Anonymous",
           email: auth.currentUser.email,
+          photoUrl: auth.currentUser.photoURL,
           room,
         });
         setNewMessage("");
@@ -67,7 +79,7 @@ export const Chat = ({ room }) => {
   const currentUserEmail = auth.currentUser?.email;
 
   return (
-    <div className="chat-app bg-gray-100 min-h-screen flex flex-col">
+    <div className="chat-app bg-gray-100 min-h-screen flex flex-col mx-[8%] my-[1%] border-[1px] border-black">
       <div className="header bg-blue-600 text-white py-4 px-6">
         <h1 className="text-2xl font-semibold">
           Welcome to: {room.toUpperCase()}
@@ -103,18 +115,38 @@ export const Chat = ({ room }) => {
                     alignSelf: isCurrentUser ? "flex-end" : "flex-start",
                   }}
                 >
-                  <div className="flex items-center justify-between mb-1">
-                    <span
-                      className={`user font-bold ${
-                        isCurrentUser ? "text-white" : "text-blue-600"
-                      }`}
-                    >
-                      {message.user}
-                    </span>
-                    <span className="text-sm text-gray-500">
-                      {message.createdAt ? formattedDate : "Sending..."}
-                    </span>
-                    <p className="ms-2 text-lg">{message.text}</p>
+                  <div className="flex flex-col items-start mb-2">
+                    <div className="flex items-center justify-between w-full">
+                      <span
+                        className={`font-bold ${isCurrentUser ? "text-white" : "text-blue-600"}`}
+                      >
+                        {message.photoUrl && (
+                          <img
+                            src={message.photoUrl}
+                            alt="user-photo"
+                            className="w-8 h-8 rounded-full object-cover"
+                          />
+                        )}{" "}
+                        {message.user}
+                      </span>
+                      {/* <span className="text-sm text-gray-400">
+                        {message.createdAt ? formattedDate : "Sending..."}
+                      </span> */}
+                    </div>
+                    <p className="text-lg ms-2 mb-1 break-words overflow-hidden text-ellipsis max-w-full">
+                      {message.text}
+                    </p>
+
+                    {/* Delete button visible only for the current user */}
+                    {isCurrentUser && (
+                      <button
+                        onClick={() => deleteMessage(message.id)}
+                        className="text-red-500 hover:text-red-700 text-sm"
+                        aria-label="Delete message"
+                      >
+                        ❌
+                      </button>
+                    )}
                   </div>
                 </div>
               );
