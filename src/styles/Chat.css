@@ -1,0 +1,5 @@
+
+.messages {
+    max-height: 80vh; /* or adjust to fit your layout */
+    overflow-y: auto;
+}  
